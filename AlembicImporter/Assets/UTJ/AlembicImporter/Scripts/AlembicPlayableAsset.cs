@@ -16,7 +16,11 @@ namespace UTJ
         [SerializeField] AlembicStream m_abcStream;
         [SerializeField] float m_time;
 
-        public AlembicStream alembicStream { get { return m_abcStream; } }
+
+        public AlembicStream alembicStream {
+            get { return m_abcStream; }
+            set { m_abcStream = value; }
+        }
         public float time {
             get { return m_time; }
             set { m_time = value; LiveLink(); }
@@ -26,8 +30,8 @@ namespace UTJ
 
         public override Playable CreateInstance(GameObject go)
         {
-            var playable = Playable.Create<AlembicClipInstance>();
-            playable.SetData(this);
+            var playable = Playable.Create<AlembicPlayable>();
+            playable.SetData(this, go);
             return playable;
         }
 
@@ -44,19 +48,20 @@ namespace UTJ
         public bool supportsExtrapolation { get { return true; } }
     }
 
-    public class AlembicClipInstance : ScriptPlayable
+    public class AlembicPlayable : ScriptPlayable
     {
-
         private AlembicPlayableAsset m_asset;
+        private GameObject m_go;
 
-        public void SetData(AlembicPlayableAsset data)
+        public void SetData(AlembicPlayableAsset data, GameObject go)
         {
             m_asset = data;
+            m_go = go;
         }
 
         public override void PrepareFrame(FrameData info)
         {
-            Debug.Log("AlembicClipInstance.PrepareFrame()");
+            Debug.Log("AlembicPlayable.PrepareFrame()");
             m_asset.time = info.time;
         }
 
@@ -66,7 +71,7 @@ namespace UTJ
     }
 
 
-    public class AlembicClipMixer : ScriptPlayable
+    public class AlembicMixer : ScriptPlayable
     {
         public override void PrepareFrame(FrameData info)
         {

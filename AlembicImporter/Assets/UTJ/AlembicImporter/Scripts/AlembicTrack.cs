@@ -12,15 +12,15 @@ namespace UTJ
 {
 
     [System.Serializable]
-    [ClipClass(typeof(MyStuff.CameraShotExample))]
-    [TrackMediaType(SequenceAsset.MediaType.Script, true)]
+    [ClipClass(typeof(AlembicStream))]
+    [ClipClass(typeof(AlembicPlayableAsset))]
+    [TrackMediaType(SequenceAsset.MediaType.Script)]
+    [UseGameObject]
     public class AlembicTrack : TrackAsset
     {
-        protected AlembicPlayableAsset m_abcPlayableAsset;
-
         public override Playable OnCreatePlayableGraph(GameObject go, IntervalTree tree)
         {
-            var mixer = Playable.Create<AlembicClipMixer>();
+            var mixer = Playable.Create<AlembicMixer>();
             foreach (var c in clips)
             {
                 var clip = c.asset as AlembicPlayableAsset;
@@ -36,17 +36,31 @@ namespace UTJ
 
         public override SequenceAsset.Clip CreateClip(UnityEngine.Object asset)
         {
-            double currentDuration = 0;
-            foreach (var c in clips)
+            if (asset == null)
             {
-                double clipEndTime = c.start + c.duration;
-                currentDuration = Math.Max(currentDuration, clipEndTime);
+                throw new System.ArgumentException("asset cannot be null");
             }
-            var newClip = base.CreateClip(asset);
-            newClip.duration = 10.0f;
-            newClip.displayName = "shot" + clips.Length;
-            newClip.start = currentDuration;
-            return newClip;
+
+            if (asset is AlembicStream)
+            {
+                var go = asset as AlembicStream;
+                var psasset = ScriptableObject.CreateInstance<AlembicPlayableAsset>();
+                psasset.alembicStream = go;
+                psasset.name = go.name;
+                asset = psasset;
+            }
+
+            if (asset is AlembicPlayableAsset)
+            {
+                var clip = CreateNewClipContainerInternal();
+                clip.asset = asset;
+                clip.displayName = asset.name;
+                clip.duration = (asset as AlembicPlayableAsset).duration;
+                clip.timeScale = 1;
+                clip.postExtrapolationMode = SequenceAsset.Clip.Extrapolation.None;
+                return clip;
+            }
+            return null;
         }
 
         public override bool recordable
